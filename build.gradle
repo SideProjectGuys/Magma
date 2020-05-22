@@ -110,7 +110,7 @@ allprojects {
     apply plugin: 'jacoco'
     apply plugin: 'com.github.ben-manes.versions'
 
-    group = "space.npstr.magma"
+    group = "com.github.SideProjectGuys"
     version = "${versionFromTag()}"
     archivesBaseName = project.name
 
