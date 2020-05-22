@@ -98,6 +98,10 @@ public class AudioStack extends BaseSubscriber<LifecycleEvent> {
         this.lifecycleSink.next(event);
     }
 
+    public void nextApi(final MagmaEvent event) {
+        this.apiEventConsumer.accept(event);
+    }
+
     public WebsocketConnectionState.Phase getConnectionPhase() {
         final AudioWebSocket socket = this.webSocket;
         if (socket != null) {
@@ -144,7 +148,7 @@ public class AudioStack extends BaseSubscriber<LifecycleEvent> {
         }
 
         this.webSocket = new AudioWebSocket(this.sendFactory, connectWebSocket.getSessionInfo(),
-                this.webSocketClient, this::next, this.udpSocket);
+                this.webSocketClient, this::next, this::nextApi, this.udpSocket);
         if (this.sendHandler != null) {
             this.webSocket.getAudioConnection().updateSendHandler(this.sendHandler);
         }

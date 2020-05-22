@@ -81,6 +81,7 @@ public interface InboundWsEvent extends WsEvent {
             case OpCode.SPEAKING:
                 final JSONObject speakingD = content.getJSONObject("d");
                 return SpeakingWsEvent.builder()
+                        .userId(speakingD.getString("user_id"))
                         .speakingMask(speakingD.getInt("speaking"))
                         .ssrc(speakingD.getInt("ssrc"))
                         .build();

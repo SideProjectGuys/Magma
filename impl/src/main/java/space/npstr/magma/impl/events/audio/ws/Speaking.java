@@ -34,6 +34,8 @@ public abstract class Speaking implements InboundWsEvent, OutboundWsEvent {
         return OpCode.SPEAKING;
     }
 
+    public abstract String getUserId();
+
     public abstract int getSpeakingMask();
 
     public abstract int getSsrc();

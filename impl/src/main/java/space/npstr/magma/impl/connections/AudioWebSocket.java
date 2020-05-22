@@ -32,6 +32,8 @@ import reactor.core.scheduler.Schedulers;
 import space.npstr.magma.api.MdcKey;
 import space.npstr.magma.api.Member;
 import space.npstr.magma.api.WebsocketConnectionState;
+import space.npstr.magma.api.event.MagmaEvent;
+import space.npstr.magma.api.event.SpeakingApiEvent;
 import space.npstr.magma.api.event.WebSocketClosedApiEvent;
 import space.npstr.magma.impl.EncryptionMode;
 import space.npstr.magma.impl.MagmaVersionProvider;
@@ -86,6 +88,7 @@ public class AudioWebSocket extends BaseSubscriber<InboundWsEvent> {
     private final URI wssEndpoint;
     private final AudioConnection audioConnection;
     private final Consumer<CloseWebSocket> closeCallback;
+    private final Consumer<MagmaEvent> apiEventCallback;
     private final ClosingWebSocketClient webSocketClient;
 
     private final UnicastProcessor<OutboundWsEvent> webSocketProcessor;
@@ -103,7 +106,7 @@ public class AudioWebSocket extends BaseSubscriber<InboundWsEvent> {
 
     public AudioWebSocket(final IAudioSendFactory sendFactory, final SessionInfo session,
                           final ClosingWebSocketClient webSocketClient, final Consumer<CloseWebSocket> closeCallback,
-                          final DatagramSocket udpSocket) {
+                          final Consumer<MagmaEvent> apiEventCallback, final DatagramSocket udpSocket) {
         this.session = session;
         try {
             this.wssEndpoint = new URI(String.format("wss://%s/?v=4", session.getVoiceServerUpdate().getEndpoint()));
@@ -112,6 +115,7 @@ public class AudioWebSocket extends BaseSubscriber<InboundWsEvent> {
         }
         this.audioConnection = new AudioConnection(this, sendFactory, udpSocket);
         this.closeCallback = closeCallback;
+        this.apiEventCallback = apiEventCallback;
         this.webSocketClient = webSocketClient;
 
 
@@ -132,6 +136,7 @@ public class AudioWebSocket extends BaseSubscriber<InboundWsEvent> {
 
     public void setSpeaking(final int speaking, final int ssrc) {
         sendWhenReady(SpeakingWsEvent.builder()
+                .userId("")
                 .speakingMask(speaking)
                 .ssrc(ssrc)
                 .build());
@@ -169,8 +174,16 @@ public class AudioWebSocket extends BaseSubscriber<InboundWsEvent> {
                 this.handleReady((Ready) inboundEvent);
             } else if (inboundEvent instanceof SessionDescription) {
                 this.handleSessionDescription((SessionDescription) inboundEvent);
+            } else if (inboundEvent instanceof Speaking) {
+                final Member member = this.session.getVoiceServerUpdate().getMember();
+                this.apiEventCallback.accept(
+                        SpeakingApiEvent.builder()
+                                .member(member)
+                                .userId(((Speaking) inboundEvent).getUserId())
+                                .speaking(((Speaking) inboundEvent).getSpeakingMask() == 1)
+                                .build()
+                );
             } else if (inboundEvent instanceof HeartbeatAck
-                    || inboundEvent instanceof Speaking
                     || inboundEvent instanceof ClientDisconnect) {
                 // noop
             } else if (inboundEvent instanceof WebSocketClosed) {
