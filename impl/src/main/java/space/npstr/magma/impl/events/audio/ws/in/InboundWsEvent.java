@@ -46,6 +46,7 @@ public interface InboundWsEvent extends WsEvent {
     static InboundWsEvent from(final String payload) {
         final JSONObject content = new JSONObject(payload);
         final int opCode = content.getInt("op");
+        System.out.println("Received ws event " + opCode);
 
         switch (opCode) {
             case OpCode.HELLO:
@@ -80,6 +81,7 @@ public interface InboundWsEvent extends WsEvent {
                         .build();
             case OpCode.SPEAKING:
                 final JSONObject speakingD = content.getJSONObject("d");
+                System.out.println("Speaking event content " + speakingD.toString());
                 return SpeakingWsEvent.builder()
                         .userId(speakingD.getString("user_id"))
                         .speakingMask(speakingD.getInt("speaking"))
